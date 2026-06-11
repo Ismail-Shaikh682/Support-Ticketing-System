@@ -1,0 +1,9 @@
+{
+  "name": "support-crm",
+  "version": "1.0.0",
+  "main": "public/app.js",
+  "scripts": {
+    "start": "node public/app.js"
+  },
+  "type": "commonjs"
+}

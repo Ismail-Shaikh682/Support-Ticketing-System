@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-4 md:p-8">
+  <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow" id="ticketContainer">
+    <div id="loading" class="text-center py-8">Loading...</div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    const params = new URLSearchParams(window.location.search);
+    const ticketId = params.get('ticket_id');
+
+    if (!ticketId) {
+      document.getElementById('ticketContainer').innerHTML = '<p class="text-red-500">No ticket ID provided.</p>';
+    } else {
+      loadTicket();
+    }
+
+    async function loadTicket() {
+      try {
+        const res = await fetch(`${API_BASE}/tickets/${ticketId}`);
+        if (!res.ok) throw new Error('Ticket not found');
+        const ticket = await res.json();
+        renderTicket(ticket);
+      } catch (err) {
+        document.getElementById('ticketContainer').innerHTML = `<p class="text-red-500">${err.message}</p>`;
+      }
+    }
+
+    function renderTicket(ticket) {
+      const container = document.getElementById('ticketContainer');
+      const notesHtml = ticket.notes.length === 0
+        ? '<p class="text-gray-500 italic">No notes yet.</p>'
+        : ticket.notes.map(n => `
+            <div class="border-b pb-2 mb-2">
+              <p class="text-sm text-gray-800">${escapeHtml(n.note_text)}</p>
+              <span class="text-xs text-gray-400">${new Date(n.created_at).toLocaleString()}</span>
+            </div>
+          `).join('');
+
+      container.innerHTML = `
+        <div class="flex justify-between items-start mb-6">
+          <h2 class="text-2xl font-bold">${escapeHtml(ticket.subject)}</h2>
+          <a href="/" class="text-blue-600 hover:underline text-sm">← Back</a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div><span class="font-medium">Ticket ID:</span> ${ticket.ticket_id}</div>
+          <div><span class="font-medium">Status:</span> <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusColor(ticket.status)}">${ticket.status}</span></div>
+          <div><span class="font-medium">Customer:</span> ${escapeHtml(ticket.customer_name)} (${escapeHtml(ticket.customer_email)})</div>
+          <div><span class="font-medium">Created:</span> ${new Date(ticket.created_at).toLocaleString()}</div>
+          <div><span class="font-medium">Updated:</span> ${new Date(ticket.updated_at).toLocaleString()}</div>
+        </div>
+        <div class="mb-6">
+          <h3 class="font-semibold mb-1">Description</h3>
+          <p class="text-gray-700 whitespace-pre-wrap">${escapeHtml(ticket.description)}</p>
+        </div>
+
+        <!-- Status Update -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <h3 class="font-semibold mb-2">Update Status</h3>
+          <select id="newStatus" class="px-3 py-2 border rounded-md mr-2">
+            <option value="Open" ${ticket.status === 'Open' ? 'selected' : ''}>Open</option>
+            <option value="In Progress" ${ticket.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+            <option value="Closed" ${ticket.status === 'Closed' ? 'selected' : ''}>Closed</option>
+          </select>
+          <button id="updateBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Update</button>
+        </div>
+
+        <!-- Notes Section -->
+        <div class="mb-6">
+          <h3 class="font-semibold mb-2">Notes</h3>
+          <div class="mb-4 space-y-2">${notesHtml}</div>
+          <textarea id="noteInput" rows="3" placeholder="Add a note..." class="w-full px-3 py-2 border rounded-md mb-2"></textarea>
+          <button id="addNoteBtn" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">Add Note</button>
+        </div>
+      `;
+
+      // Attach event listeners
+      document.getElementById('updateBtn').addEventListener('click', updateStatus);
+      document.getElementById('addNoteBtn').addEventListener('click', addNote);
+    }
+
+    function statusColor(status) {
+      if (status === 'Open') return 'bg-yellow-100 text-yellow-800';
+      if (status === 'In Progress') return 'bg-blue-100 text-blue-800';
+      return 'bg-green-100 text-green-800';
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    async function updateStatus() {
+      const newStatus = document.getElementById('newStatus').value;
+      const res = await fetch(`${API_BASE}/tickets/${ticketId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) loadTicket();   
+    }
+
+    async function addNote() {
+      const noteText = document.getElementById('noteInput').value.trim();
+      if (!noteText) return;
+      const res = await fetch(`${API_BASE}/tickets/${ticketId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: document.getElementById('newStatus').value, notes: noteText })
+      });
+      if (res.ok) {
+        document.getElementById('noteInput').value = '';
+        loadTicket();
+      }
+    }
+  </script>
+</body>
+</html>

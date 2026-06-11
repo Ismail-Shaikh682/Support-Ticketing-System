@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Ticket</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-4 md:p-8">
+  <div class="max-w-lg mx-auto bg-white p-6 rounded-xl shadow">
+    <h2 class="text-2xl font-semibold mb-6">Create New Ticket</h2>
+    <form id="createForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+        <input type="text" id="customer_name" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Customer Email</label>
+        <input type="email" id="customer_email" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Issue Title</label>
+        <input type="text" id="subject" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Description</label>
+        <textarea id="description" rows="4" required class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">Create Ticket</button>
+    </form>
+    <div id="result" class="mt-4 text-center"></div>
+    <a href="/" class="block text-center mt-4 text-blue-600 hover:underline">← Back to tickets</a>
+  </div>
+
+  <script>
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        customer_name: document.getElementById('customer_name').value,
+        customer_email: document.getElementById('customer_email').value,
+        subject: document.getElementById('subject').value,
+        description: document.getElementById('description').value,
+      };
+      try {
+        const res = await fetch('/api/tickets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (res.ok) {
+          document.getElementById('result').innerHTML = `
+            <p class="text-green-600">Ticket <strong>${result.ticket_id}</strong> created!</p>
+          `;
+          e.target.reset();
+        } else {
+          document.getElementById('result').innerHTML = `<p class="text-red-500">Error: ${result.error}</p>`;
+        }
+      } catch (err) {
+        document.getElementById('result').innerHTML = `<p class="text-red-500">Network error</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
