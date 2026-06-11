@@ -1,9 +1,13 @@
 {
   "name": "support-crm",
   "version": "1.0.0",
-  "main": "public/app.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node public/app.js"
+    "start": "node app.js"
   },
-  "type": "commonjs"
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
 }

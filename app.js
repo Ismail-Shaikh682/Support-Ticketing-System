@@ -1,7 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { createTicket, getTickets, getTicketById, updateTicketStatus } = require('./database');
+const {
+  createTicket,
+  getTickets,
+  getTicketById,
+  updateTicketStatus
+} = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,57 +14,73 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-app.use(express.static(__dirname));
+// Serve frontend files from public folder
+app.use(express.static(path.join(__dirname, 'public')));
 
-// POST /api/tickets
+// Create ticket
 app.post('/api/tickets', (req, res) => {
   try {
     const { customer_name, customer_email, subject, description } = req.body;
 
     if (!customer_name || !customer_email || !subject || !description) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({
+        error: 'Missing required fields'
+      });
     }
 
     const ticket = createTicket(req.body);
     res.status(201).json(ticket);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-// GET /api/tickets
+// Get all tickets
 app.get('/api/tickets', (req, res) => {
   try {
     const { status, search } = req.query;
     const tickets = getTickets(status, search);
     res.json(tickets);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-// GET /api/tickets/:ticket_id
+// Get single ticket
 app.get('/api/tickets/:ticket_id', (req, res) => {
   try {
     const ticket = getTicketById(req.params.ticket_id);
 
     if (!ticket) {
-      return res.status(404).json({ error: 'Ticket not found' });
+      return res.status(404).json({
+        error: 'Ticket not found'
+      });
     }
 
     res.json(ticket);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-// PUT /api/tickets/:ticket_id
+// Update ticket
 app.put('/api/tickets/:ticket_id', (req, res) => {
   try {
     const { status, notes } = req.body;
 
     if (!status) {
-      return res.status(400).json({ error: 'Status is required' });
+      return res.status(400).json({
+        error: 'Status is required'
+      });
     }
 
     const result = updateTicketStatus(
@@ -70,15 +91,23 @@ app.put('/api/tickets/:ticket_id', (req, res) => {
 
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({
+      error: err.message
+    });
   }
+});
+
+// Home page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Fallback route
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
